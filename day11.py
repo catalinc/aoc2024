@@ -1,6 +1,5 @@
+from collections import defaultdict
 import sys
-import os
-import psutil
 
 
 def transform_stones(stones):
@@ -19,21 +18,10 @@ def transform_stones(stones):
             new_stones.append(stone * 2024)
     return new_stones
 
-def find_cycle(stone):
-    cycle = 0
-    new_stones = [stone]
-    while True:
-        new_stones = transform_stones(new_stones)
-        cycle += 1
-        if stone in new_stones:
-            return cycle
 
 def simulate_blinks(stones, blinks):
     for i in range(blinks):
         stones = transform_stones(stones)
-        print("Blink {}: {} stones".format(i + 1, len(stones)))
-        process = psutil.Process(os.getpid())
-        print("Memory used: {} MB".format(process.memory_info().rss / 1024 ** 2))
     return stones
 
 
@@ -42,11 +30,31 @@ def part1(stones):
     return len(final_stones)
 
 
+def transform_one_stone(stone):
+    if stone == 0:
+        return [1]
+    s_stone = str(stone)
+    if len(s_stone) % 2 == 0:
+        mid = len(s_stone) // 2
+        left = int(s_stone[:mid])
+        right = int(s_stone[mid:])
+        return [int(left), int(right)]
+    return [stone * 2024]
+
+
+def simulate_blinks_faster(stones, blinks):
+    counts = {k: 1 for k in stones}
+    for _ in range(blinks):
+        new_counts = defaultdict(int)
+        for stone, num in counts.items():
+            for new_stone in transform_one_stone(stone):
+                new_counts[new_stone] += num
+        counts = new_counts
+    return sum(counts.values())
+
+
 def part2(stones):
-    for stone in stones:
-        print(f"{stone} found after {find_cycle(stone)} cycles")
-    final_stones = simulate_blinks(stones, 5)
-    return len(final_stones)
+    return simulate_blinks_faster(stones, 75)
 
 
 def main():
